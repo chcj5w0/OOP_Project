@@ -10,13 +10,16 @@
 
 PDF 요구사항(`factory_project_v3.pdf`) 중 **Phase 1**에서는 아래만 다룬다.
 
-- [ ] 단위 기계의 추상 타입 계층 (`SimObject → Machine → 구체 기계`)
-- [ ] 기계 간 연결(`Connector → Pipeline / Conveyor`) 1차 버전
-- [ ] 시뮬레이션 루프가 분기 없이 모든 객체에 `update(tick)` 호출
-- [ ] UI ↔ Backend 분리 (Cmd / Snapshot 패턴)
-- [ ] ImGui 5개 윈도우 중 **Simulation Control / Factory Floor / Inspector** 우선
+- [x] 단위 기계의 추상 타입 계층 (`SimObject → Machine → 구체 기계`) — `src/core/`
+- [x] 기계 간 연결(`Connector → Pipeline / Conveyor`) 1차 버전 — `src/core/Pipeline.*`, `Conveyor.*`
+- [x] 시뮬레이션 루프가 분기 없이 모든 객체에 `update(tick)` 호출 — `Factory::tick()`
+- [x] UI ↔ Backend 분리 (Cmd / Snapshot 패턴) — `src/bridge/`
+- [x] ImGui 5개 윈도우 중 **Simulation Control / Factory Floor / Inspector** 우선 — `src/ui/`
+- [x] 시나리오 1종 빌드 (`buildScenarioNormal`) — Source→Pipe→Reactor→Pipe→Separator→Pipe 토폴로지
 
-Phase 2(이후): Event Log, Statistics, 4종 시나리오 셀렉터, breakdown/worker, 저장/복원.
+**Phase 1 빌드/실행 검증 완료** (Ubuntu 22.04, SDL2 2.0.20, 2026-05-16 기준).
+
+Phase 2(이후): Event Log/Statistics 실제 데이터 채우기, 4종 시나리오 셀렉터, breakdown/worker, 저장/복원.
 
 ---
 
@@ -138,44 +141,48 @@ void Factory::tick() {
 
 ---
 
-## 5. 파일/디렉토리 구조 (제안)
+## 5. 파일/디렉토리 구조 (현 구현 상태)
 
 ```
 my_imgui_app/
-├── CMakeLists.txt
+├── CMakeLists.txt                 ← SDL2 + GLOB_RECURSE 자동 수집
 ├── factory_project_v3.pdf
 ├── PROJECT_SKELETON.md            ← (이 문서)
-├── libs/imgui/                    ← ImGui 소스 (기존)
-├── src/
-│   ├── main.cpp                   ← 유일한 양쪽-가시 파일
-│   │
-│   ├── core/                      ← 백엔드 (ImGui 미포함)
-│   │   ├── SimObject.h
-│   │   ├── Machine.h / .cpp       ← abstract
-│   │   ├── Connector.h / .cpp     ← abstract
-│   │   ├── Pipeline.h / .cpp      ← Connector 구체
-│   │   ├── Conveyor.h / .cpp      ← Connector 구체 (Phase 2)
-│   │   ├── Product.h / .cpp
-│   │   ├── Factory.h / .cpp       ← 컴포지션 루트, tick()
-│   │   └── machines/
-│   │       ├── SourceTank.h/.cpp
-│   │       ├── Reactor.h/.cpp
-│   │       └── Separator.h/.cpp
-│   │
-│   ├── bridge/                    ← POD only, 의존성 없음
-│   │   ├── MachineCmd.h
-│   │   └── MachineSnap.h
-│   │
-│   └── ui/                        ← ImGui만 의존, 백엔드 헤더 미포함
-│       ├── SimControlUI.h/.cpp
-│       ├── FactoryFloorUI.h/.cpp
-│       ├── InspectorUI.h/.cpp
-│       ├── EventLogUI.h/.cpp     (Phase 2)
-│       └── StatisticsUI.h/.cpp   (Phase 2)
+├── docs/
+│   ├── Machine_MVC.mdj            ← 초기 MVC 토글 데모 스냅샷 (참고용)
+│   └── UML.mdj                    ← Phase 1 골격 UML (StarUML)
+├── libs/imgui/                    ← ImGui 소스
+├── .vscode/                       ← IntelliSense 설정 (compile_commands.json 연동)
+└── src/
+    ├── main.cpp                   ← 유일한 양쪽-가시 파일 (Factory + UI 와이어링)
+    │
+    ├── core/                      ← 백엔드 (ImGui 미포함)
+    │   ├── SimObject.h            ← abstract root
+    │   ├── Machine.h / .cpp       ← abstract (typeName, onProcessComplete 강제)
+    │   ├── Connector.h / .cpp     ← abstract (push/pop/size/capacity)
+    │   ├── Pipeline.h / .cpp      ← Connector 구체 (std::deque FIFO)
+    │   ├── Conveyor.h / .cpp      ← Connector 구체 (Phase 2용 슬롯 배열)
+    │   ├── Product.h / .cpp       ← Product/RawFeed/Intermediate/FinishedProduct
+    │   ├── Factory.h / .cpp       ← tick() + applyCmd + snapshotAll + buildScenarioNormal
+    │   └── machines/
+    │       ├── SourceTank.h/.cpp  ← N틱마다 RawFeed 생성
+    │       ├── Reactor.h/.cpp     ← RawFeed → Intermediate (processTicks)
+    │       └── Separator.h/.cpp   ← Intermediate → FinishedProduct (processTicks)
+    │
+    ├── bridge/                    ← POD only, 의존성 없음
+    │   ├── MachineCmd.h           ← targetId + startWork/forceBreak/instantRepair
+    │   └── MachineSnap.h          ← id/typeName/state/health/progress/processTicks/in&out
+    │
+    └── ui/                        ← ImGui만 의존, 백엔드 헤더 미포함
+        ├── SimControlUI.h/.cpp    ← Cmd 작성 위젯
+        ├── FactoryFloorUI.h/.cpp  ← 모든 머신 상태 리스트
+        ├── InspectorUI.h/.cpp     ← 선택된 머신 1개 상세
+        ├── EventLogUI.h/.cpp      ← (Phase 2: 더미)
+        └── StatisticsUI.h/.cpp    ← (Phase 2: 더미)
 ```
 
-**의존성 규칙(빌드에서 강제)**
-- `core/*` → `<vector>`, `<memory>`, `<string>`만. 절대 `imgui.h` 금지.
+**의존성 규칙(현재 디렉토리 분할로 표현)**
+- `core/*` → `<vector>`, `<memory>`, `<string>`, `bridge/*` 만. 절대 `imgui.h` 금지.
 - `ui/*` → `imgui.h` + `bridge/*` 만. `core/*` 헤더 금지.
 - `bridge/*` → 표준 라이브러리만. 양쪽 어디서도 안전하게 include.
 - `main.cpp` → 셋 다 include 가능 (유일하게 허용된 다리).

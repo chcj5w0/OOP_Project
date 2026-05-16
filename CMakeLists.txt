@@ -13,19 +13,14 @@ set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 
 # ==============================================================================
 # [How to add new source files]
-# Whenever you create a new .cpp file for your classes (e.g., src/Game.cpp),
-# you MUST explicitly append its path to the 'SOURCES' list below.
+# The project now uses a recursive source glob for src/*.cpp so new files
+# under src/core, src/bridge, and src/ui are picked up automatically.
 # ==============================================================================
-set(SOURCES
-    src/main.cpp
-    src/Machine.cpp
-    src/MachineUI.cpp
+file(GLOB_RECURSE PROJECT_SOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+)
 
-    # Add your new source files here. Example:
-    # src/GameManager.cpp
-    # src/Player.cpp
-
-    # ImGui core and backend files
+set(IMGUI_SOURCES
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_draw.cpp
     ${IMGUI_DIR}/imgui_tables.cpp
@@ -33,6 +28,11 @@ set(SOURCES
     ${IMGUI_DIR}/imgui_demo.cpp
     ${IMGUI_DIR}/backends/imgui_impl_sdl2.cpp
     ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
+)
+
+set(SOURCES
+    ${PROJECT_SOURCE_FILES}
+    ${IMGUI_SOURCES}
 )
 
 # 2. Create the executable target

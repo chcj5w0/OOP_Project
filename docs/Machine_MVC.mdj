@@ -1,0 +1,406 @@
+{
+    "_type": "Project",
+    "_id": "AAAAAAFF+h6SjaM2Hec=",
+    "name": "MachineMVC",
+    "ownedElements": [
+        {
+            "_type": "UMLModel",
+            "_id": "AAAAAAFF+qBWK6M3Z8Y=",
+            "_parent": { "$ref": "AAAAAAFF+h6SjaM2Hec=" },
+            "name": "Model",
+            "ownedElements": [
+                {
+                    "_type": "UMLClassDiagram",
+                    "_id": "diagram-001",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "name": "Machine MVC Class Diagram",
+                    "visible": true,
+                    "defaultDiagram": true,
+                    "ownedViews": [
+                        {
+                            "_type": "UMLClassView",
+                            "_id": "view-machineui",
+                            "_parent": { "$ref": "diagram-001" },
+                            "model": { "$ref": "cls-machineui" },
+                            "left": 320,
+                            "top": 40,
+                            "width": 280,
+                            "height": 110,
+                            "nameCompartment": {
+                                "_type": "UMLNameCompartment",
+                                "_id": "view-machineui-name",
+                                "_parent": { "$ref": "view-machineui" },
+                                "model": { "$ref": "cls-machineui" }
+                            }
+                        },
+                        {
+                            "_type": "UMLClassView",
+                            "_id": "view-controller",
+                            "_parent": { "$ref": "diagram-001" },
+                            "model": { "$ref": "cls-controller" },
+                            "left": 320,
+                            "top": 220,
+                            "width": 280,
+                            "height": 140,
+                            "nameCompartment": {
+                                "_type": "UMLNameCompartment",
+                                "_id": "view-controller-name",
+                                "_parent": { "$ref": "view-controller" },
+                                "model": { "$ref": "cls-controller" }
+                            }
+                        },
+                        {
+                            "_type": "UMLClassView",
+                            "_id": "view-machine",
+                            "_parent": { "$ref": "diagram-001" },
+                            "model": { "$ref": "cls-machine" },
+                            "left": 320,
+                            "top": 430,
+                            "width": 280,
+                            "height": 140,
+                            "nameCompartment": {
+                                "_type": "UMLNameCompartment",
+                                "_id": "view-machine-name",
+                                "_parent": { "$ref": "view-machine" },
+                                "model": { "$ref": "cls-machine" }
+                            }
+                        },
+                        {
+                            "_type": "UMLEnumerationView",
+                            "_id": "view-status",
+                            "_parent": { "$ref": "diagram-001" },
+                            "model": { "$ref": "enum-status" },
+                            "left": 720,
+                            "top": 430,
+                            "width": 200,
+                            "height": 100,
+                            "nameCompartment": {
+                                "_type": "UMLNameCompartment",
+                                "_id": "view-status-name",
+                                "_parent": { "$ref": "view-status" },
+                                "model": { "$ref": "enum-status" }
+                            }
+                        },
+                        {
+                            "_type": "UMLAssociationView",
+                            "_id": "view-assoc-uitoctrl",
+                            "_parent": { "$ref": "diagram-001" },
+                            "model": { "$ref": "assoc-uitoctrl" },
+                            "tail": { "$ref": "view-machineui" },
+                            "head": { "$ref": "view-controller" }
+                        },
+                        {
+                            "_type": "UMLAssociationView",
+                            "_id": "view-assoc-ctrltomachine",
+                            "_parent": { "$ref": "diagram-001" },
+                            "model": { "$ref": "assoc-ctrltomachine" },
+                            "tail": { "$ref": "view-controller" },
+                            "head": { "$ref": "view-machine" }
+                        },
+                        {
+                            "_type": "UMLDependencyView",
+                            "_id": "view-dep-machinetostatus",
+                            "_parent": { "$ref": "diagram-001" },
+                            "model": { "$ref": "dep-machinetostatus" },
+                            "tail": { "$ref": "view-machine" },
+                            "head": { "$ref": "view-status" }
+                        }
+                    ]
+                },
+                {
+                    "_type": "UMLClass",
+                    "_id": "cls-machineui",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "name": "MachineUI",
+                    "documentation": "View layer. Renders ImGui widgets and forwards user input to MachineController.",
+                    "attributes": [
+                        {
+                            "_type": "UMLAttribute",
+                            "_id": "attr-ui-ctrl",
+                            "_parent": { "$ref": "cls-machineui" },
+                            "name": "m_ctrl",
+                            "type": "MachineController&",
+                            "visibility": "private"
+                        }
+                    ],
+                    "operations": [
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-ui-ctor",
+                            "_parent": { "$ref": "cls-machineui" },
+                            "name": "MachineUI",
+                            "visibility": "public",
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-ui-ctor-p1",
+                                    "_parent": { "$ref": "op-ui-ctor" },
+                                    "name": "ctrl",
+                                    "type": "MachineController&",
+                                    "direction": "in"
+                                }
+                            ]
+                        },
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-ui-render",
+                            "_parent": { "$ref": "cls-machineui" },
+                            "name": "render",
+                            "visibility": "public",
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-ui-render-ret",
+                                    "_parent": { "$ref": "op-ui-render" },
+                                    "name": "",
+                                    "type": "void",
+                                    "direction": "return"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "_type": "UMLClass",
+                    "_id": "cls-controller",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "name": "MachineController",
+                    "documentation": "Controller layer. Routes UI commands to the Machine model.",
+                    "attributes": [
+                        {
+                            "_type": "UMLAttribute",
+                            "_id": "attr-ctrl-machine",
+                            "_parent": { "$ref": "cls-controller" },
+                            "name": "m_machine",
+                            "type": "Machine&",
+                            "visibility": "private"
+                        }
+                    ],
+                    "operations": [
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-ctrl-ctor",
+                            "_parent": { "$ref": "cls-controller" },
+                            "name": "MachineController",
+                            "visibility": "public",
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-ctrl-ctor-p1",
+                                    "_parent": { "$ref": "op-ctrl-ctor" },
+                                    "name": "machine",
+                                    "type": "Machine&",
+                                    "direction": "in"
+                                }
+                            ]
+                        },
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-ctrl-onToggle",
+                            "_parent": { "$ref": "cls-controller" },
+                            "name": "onToggleClicked",
+                            "visibility": "public",
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-ctrl-onToggle-ret",
+                                    "_parent": { "$ref": "op-ctrl-onToggle" },
+                                    "name": "",
+                                    "type": "void",
+                                    "direction": "return"
+                                }
+                            ]
+                        },
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-ctrl-getStatus",
+                            "_parent": { "$ref": "cls-controller" },
+                            "name": "getStatus",
+                            "visibility": "public",
+                            "isQuery": true,
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-ctrl-getStatus-ret",
+                                    "_parent": { "$ref": "op-ctrl-getStatus" },
+                                    "name": "",
+                                    "type": "Status",
+                                    "direction": "return"
+                                }
+                            ]
+                        },
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-ctrl-getStatusLabel",
+                            "_parent": { "$ref": "cls-controller" },
+                            "name": "getStatusLabel",
+                            "visibility": "public",
+                            "isQuery": true,
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-ctrl-getStatusLabel-ret",
+                                    "_parent": { "$ref": "op-ctrl-getStatusLabel" },
+                                    "name": "",
+                                    "type": "const char*",
+                                    "direction": "return"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "_type": "UMLClass",
+                    "_id": "cls-machine",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "name": "Machine",
+                    "documentation": "Model layer. Owns the actual on/off state. Does NOT depend on ImGui.",
+                    "attributes": [
+                        {
+                            "_type": "UMLAttribute",
+                            "_id": "attr-machine-status",
+                            "_parent": { "$ref": "cls-machine" },
+                            "name": "m_status",
+                            "type": "Status",
+                            "visibility": "private"
+                        }
+                    ],
+                    "operations": [
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-machine-ctor",
+                            "_parent": { "$ref": "cls-machine" },
+                            "name": "Machine",
+                            "visibility": "public"
+                        },
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-machine-toggle",
+                            "_parent": { "$ref": "cls-machine" },
+                            "name": "toggle",
+                            "visibility": "public",
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-machine-toggle-ret",
+                                    "_parent": { "$ref": "op-machine-toggle" },
+                                    "name": "",
+                                    "type": "void",
+                                    "direction": "return"
+                                }
+                            ]
+                        },
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-machine-getStatus",
+                            "_parent": { "$ref": "cls-machine" },
+                            "name": "getStatus",
+                            "visibility": "public",
+                            "isQuery": true,
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-machine-getStatus-ret",
+                                    "_parent": { "$ref": "op-machine-getStatus" },
+                                    "name": "",
+                                    "type": "Status",
+                                    "direction": "return"
+                                }
+                            ]
+                        },
+                        {
+                            "_type": "UMLOperation",
+                            "_id": "op-machine-getStatusLabel",
+                            "_parent": { "$ref": "cls-machine" },
+                            "name": "getStatusLabel",
+                            "visibility": "public",
+                            "isQuery": true,
+                            "parameters": [
+                                {
+                                    "_type": "UMLParameter",
+                                    "_id": "op-machine-getStatusLabel-ret",
+                                    "_parent": { "$ref": "op-machine-getStatusLabel" },
+                                    "name": "",
+                                    "type": "const char*",
+                                    "direction": "return"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "_type": "UMLEnumeration",
+                    "_id": "enum-status",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "name": "Status",
+                    "documentation": "Two-state enum used by Machine.",
+                    "literals": [
+                        {
+                            "_type": "UMLEnumerationLiteral",
+                            "_id": "lit-stopped",
+                            "_parent": { "$ref": "enum-status" },
+                            "name": "STOPPED"
+                        },
+                        {
+                            "_type": "UMLEnumerationLiteral",
+                            "_id": "lit-active",
+                            "_parent": { "$ref": "enum-status" },
+                            "name": "ACTIVE"
+                        }
+                    ]
+                },
+                {
+                    "_type": "UMLAssociation",
+                    "_id": "assoc-uitoctrl",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "name": "uses",
+                    "end1": {
+                        "_type": "UMLAssociationEnd",
+                        "_id": "assoc-uitoctrl-end1",
+                        "_parent": { "$ref": "assoc-uitoctrl" },
+                        "reference": { "$ref": "cls-machineui" },
+                        "navigable": false
+                    },
+                    "end2": {
+                        "_type": "UMLAssociationEnd",
+                        "_id": "assoc-uitoctrl-end2",
+                        "_parent": { "$ref": "assoc-uitoctrl" },
+                        "reference": { "$ref": "cls-controller" },
+                        "navigable": true,
+                        "name": "m_ctrl",
+                        "multiplicity": "1"
+                    }
+                },
+                {
+                    "_type": "UMLAssociation",
+                    "_id": "assoc-ctrltomachine",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "name": "uses",
+                    "end1": {
+                        "_type": "UMLAssociationEnd",
+                        "_id": "assoc-ctrltomachine-end1",
+                        "_parent": { "$ref": "assoc-ctrltomachine" },
+                        "reference": { "$ref": "cls-controller" },
+                        "navigable": false
+                    },
+                    "end2": {
+                        "_type": "UMLAssociationEnd",
+                        "_id": "assoc-ctrltomachine-end2",
+                        "_parent": { "$ref": "assoc-ctrltomachine" },
+                        "reference": { "$ref": "cls-machine" },
+                        "navigable": true,
+                        "name": "m_machine",
+                        "multiplicity": "1"
+                    }
+                },
+                {
+                    "_type": "UMLDependency",
+                    "_id": "dep-machinetostatus",
+                    "_parent": { "$ref": "AAAAAAFF+qBWK6M3Z8Y=" },
+                    "source": { "$ref": "cls-machine" },
+                    "target": { "$ref": "enum-status" }
+                }
+            ]
+        }
+    ]
+}
