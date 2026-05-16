@@ -1,0 +1,27 @@
+# Build artifacts
+build/
+*.o
+*.obj
+*.exe
+*.out
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Third-party libraries (fetched separately)
+libs/
+
+# ImGui runtime state
+imgui.ini
+
+# Reference materials (not source code)
+*.pdf
+ImGui_CrossPlatform_cmake_tutorial.html
+
+# IDE / OS
+.DS_Store
+*.swp
