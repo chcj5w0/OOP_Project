@@ -1,6 +1,7 @@
 #pragma once
+#include "UIObject.h"
 
-class StatisticsUI {
+class StatisticsUI : public UIObject {
 public:
-    void render();
+    void render() override;
 };

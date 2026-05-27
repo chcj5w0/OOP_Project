@@ -18,6 +18,9 @@ libs/
 # ImGui runtime state
 imgui.ini
 
+# Screenshots
+captures/
+
 # Reference materials (not source code)
 *.pdf
 ImGui_CrossPlatform_cmake_tutorial.html

@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     FactoryFloorUI floorUI;
     InspectorUI    inspectorUI;
 
-    bool running         = true;
+    bool   running         = true;
     bool   paused          = false;
     int    tickIntervalMs  = 500;
     Uint32 lastTickMs      = SDL_GetTicks();
