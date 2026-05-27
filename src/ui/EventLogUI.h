@@ -1,6 +1,7 @@
 #pragma once
+#include "UIObject.h"
 
-class EventLogUI {
+class EventLogUI : public UIObject {
 public:
     void render();
 };
