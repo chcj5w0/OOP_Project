@@ -102,16 +102,8 @@ int main(int argc, char* argv[]) {
         // Factory floor: all machines
         floorUI.render(snaps);
 
-        // Inspector: snap matching selected targetId
-        MachineSnap empty{};
-        empty.id       = -1;
-        empty.typeName = "(none)";
-        empty.state    = MachineState::IDLE;
-        const MachineSnap* sel = nullptr;
-        for (const auto& s : snaps) {
-            if (s.id == inspectorTarget) { sel = &s; break; }
-        }
-        inspectorUI.render(sel ? *sel : empty);
+        // Inspector: all machine snapshots
+        inspectorUI.render(snaps);
 
         if (cmd.startWork || cmd.forceBreak || cmd.instantRepair) {
             factory.applyCmd(cmd);
