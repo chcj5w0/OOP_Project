@@ -16,7 +16,7 @@ set(IMGUI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/imgui)
 # The project now uses a recursive source glob for src/*.cpp so new files
 # under src/core, src/bridge, and src/ui are picked up automatically.
 # ==============================================================================
-file(GLOB_RECURSE PROJECT_SOURCE_FILES
+file(GLOB_RECURSE PROJECT_SOURCE_FILES CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 

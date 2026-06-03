@@ -11,6 +11,12 @@ static const char* stateLabel(MachineState s) {
     return "?";
 }
 
+void FactoryFloorUI::render() {
+    ImGui::Begin("Factory Floor");
+    ImGui::TextDisabled("No machine snapshot data available.");
+    ImGui::End();
+}
+
 void FactoryFloorUI::render(const std::vector<MachineSnap>& snaps) {
     ImGui::Begin("Factory Floor");
     for (const auto& snap : snaps) {

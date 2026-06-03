@@ -1,6 +1,12 @@
 #include "SimControlUI.h"
 #include <imgui.h>
 
+void SimControlUI::render() {
+    ImGui::Begin("Simulation Control");
+    ImGui::TextDisabled("No simulation controller connected.");
+    ImGui::End();
+}
+
 void SimControlUI::render(MachineCmd& cmd) {
     ImGui::Begin("Simulation Control");
     ImGui::Checkbox("Start Work", &cmd.startWork);
