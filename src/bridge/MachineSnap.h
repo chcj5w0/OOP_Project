@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 enum class MachineState { IDLE, WORKING, BLOCKED, BROKEN };
 
 struct MachineSnap {
@@ -9,6 +11,11 @@ struct MachineSnap {
     float        health;
     int          progress;
     int          processTicks;
-    int          outputCount;
     int          inputLoad;
+    int          inputCapacity;
+    int          outputCount;
+    int          outputCapacity;
+    int          producedCount;
+    int          repairCountdown;
+    std::string  blockedReason;
 };

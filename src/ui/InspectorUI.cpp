@@ -11,6 +11,13 @@ static const char* stateLabel(MachineState state) {
     return "UNKNOWN";
 }
 
+static const char* stateLabel(const MachineSnap& snap) {
+    if (snap.state == MachineState::BROKEN && snap.repairCountdown > 0) {
+        return "BROKEN (repairing)";
+    }
+    return stateLabel(snap.state);
+}
+
 static ImVec4 stateColor(MachineState state) {
     switch (state) {
         case MachineState::IDLE:    return ImVec4(0.72f, 0.72f, 0.72f, 1.0f);
@@ -19,6 +26,13 @@ static ImVec4 stateColor(MachineState state) {
         case MachineState::BROKEN:  return ImVec4(0.95f, 0.25f, 0.25f, 1.0f);
     }
     return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+}
+
+static ImVec4 stateColor(const MachineSnap& snap) {
+    if (snap.state == MachineState::BROKEN && snap.repairCountdown > 0) {
+        return ImVec4(0.95f, 0.50f, 0.20f, 1.0f);
+    }
+    return stateColor(snap.state);
 }
 
 static float workProgressRatio(const MachineSnap& snap) {
@@ -41,7 +55,7 @@ void InspectorUI::render(const std::vector<MachineSnap>& snaps) {
         ImGuiTableFlags_Resizable |
         ImGuiTableFlags_SizingStretchProp;
 
-    if (ImGui::BeginTable("InspectorTable", 8, flags)) {
+    if (ImGui::BeginTable("InspectorTable", 10, flags)) {
         ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_WidthFixed, 40.0f);
         ImGui::TableSetupColumn("Type");
         ImGui::TableSetupColumn("State");
@@ -49,7 +63,9 @@ void InspectorUI::render(const std::vector<MachineSnap>& snaps) {
         ImGui::TableSetupColumn("Work");
         ImGui::TableSetupColumn("Input");
         ImGui::TableSetupColumn("Output");
-        ImGui::TableSetupColumn("Process");
+        ImGui::TableSetupColumn("Produced");
+        ImGui::TableSetupColumn("Repair");
+        ImGui::TableSetupColumn("Reason");
         ImGui::TableHeadersRow();
 
         for (const auto& snap : snaps) {
@@ -63,7 +79,7 @@ void InspectorUI::render(const std::vector<MachineSnap>& snaps) {
             ImGui::TextUnformatted(snap.typeName);
 
             ImGui::TableSetColumnIndex(2);
-            ImGui::TextColored(stateColor(snap.state), "%s", stateLabel(snap.state));
+            ImGui::TextColored(stateColor(snap), "%s", stateLabel(snap));
 
             ImGui::TableSetColumnIndex(3);
             ImGui::ProgressBar(snap.health, ImVec2(-1.0f, 0.0f), "");
@@ -76,13 +92,23 @@ void InspectorUI::render(const std::vector<MachineSnap>& snaps) {
             ImGui::Text("%d/%d", snap.progress, snap.processTicks);
 
             ImGui::TableSetColumnIndex(5);
-            ImGui::Text("%d", snap.inputLoad);
+            ImGui::Text("%d/%d", snap.inputLoad, snap.inputCapacity);
 
             ImGui::TableSetColumnIndex(6);
-            ImGui::Text("%d", snap.outputCount);
+            ImGui::Text("%d/%d", snap.outputCount, snap.outputCapacity);
 
             ImGui::TableSetColumnIndex(7);
-            ImGui::Text("%d ticks", snap.processTicks);
+            ImGui::Text("%d", snap.producedCount);
+
+            ImGui::TableSetColumnIndex(8);
+            if (snap.repairCountdown > 0) {
+                ImGui::Text("%d ticks", snap.repairCountdown);
+            } else {
+                ImGui::TextUnformatted("-");
+            }
+
+            ImGui::TableSetColumnIndex(9);
+            ImGui::TextUnformatted(snap.blockedReason.empty() ? "-" : snap.blockedReason.c_str());
 
             ImGui::PopID();
         }

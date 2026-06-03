@@ -10,5 +10,5 @@ public:
 
 protected:
     const char* typeName() const override { return "Separator"; }
-    void        onProcessComplete() override;
+    std::unique_ptr<Product> createOutput() override;
 };

@@ -10,7 +10,7 @@ public:
 
 protected:
     const char* typeName() const override { return "SourceTank"; }
-    void        onProcessComplete() override;
+    std::unique_ptr<Product> createOutput() override;
 
 private:
     int m_emitInterval;

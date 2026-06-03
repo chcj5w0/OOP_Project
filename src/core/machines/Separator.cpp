@@ -5,6 +5,7 @@ Separator::Separator(int id, int processTicks)
 
 void Separator::update(int tick) {
     (void)tick;
+    tickAutoRepair();
     if (state() == MachineState::BROKEN) return;
 
     if (state() == MachineState::IDLE && input()) {
@@ -17,10 +18,8 @@ void Separator::update(int tick) {
     advanceProgress();
 }
 
-void Separator::onProcessComplete() {
-    if (output()) {
-        output()->push(std::make_unique<FinishedProduct>());
-    }
+std::unique_ptr<Product> Separator::createOutput() {
+    return std::make_unique<FinishedProduct>();
 }
 
 std::string Separator::getInfo() const {

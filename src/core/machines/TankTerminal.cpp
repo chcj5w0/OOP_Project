@@ -5,6 +5,7 @@ TankTerminal::TankTerminal(int id, int processTicks)
 
 void TankTerminal::update(int tick) {
     (void)tick;
+    tickAutoRepair();
     if (state() == MachineState::BROKEN) return;
 
     if (state() == MachineState::IDLE && input()) {
@@ -23,6 +24,7 @@ std::string TankTerminal::getInfo() const {
            std::to_string(m_finishedProducts);
 }
 
-void TankTerminal::onProcessComplete() {
+std::unique_ptr<Product> TankTerminal::createOutput() {
     ++m_finishedProducts;
+    return nullptr;
 }

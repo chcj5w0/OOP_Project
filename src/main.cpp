@@ -13,6 +13,7 @@
 #include "ui/FactoryFloorUI.h"
 #include "ui/InspectorUI.h"
 #include "ui/StatisticsUI.h"
+#include "ui/RunControlManager.h"
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -48,16 +49,14 @@ int main(int argc, char* argv[]) {
     factory.buildScenarioNormal();
 
     // ── UI layer ──────────────────────────────────────────────────────────────
-    SimControlUI   simControl;
-    FactoryFloorUI floorUI;
-    InspectorUI    inspectorUI;
-    StatisticsUI   statisticsUI;
+    SimControlUI      simControl;
+    FactoryFloorUI    floorUI;
+    InspectorUI       inspectorUI;
+    StatisticsUI      statisticsUI;
+    RunControlManager runControlManager;
 
-    bool   running         = true;
-    bool   paused          = false;
-    int    tickIntervalMs  = 500;
-    Uint32 lastTickMs      = SDL_GetTicks();
-    int    inspectorTarget = 1;
+    bool running         = true;
+    int  inspectorTarget = 1;
 
     while (running) {
         SDL_Event event;
@@ -70,13 +69,7 @@ int main(int argc, char* argv[]) {
         }
 
         // ── Tick the backend ──────────────────────────────────────────────────
-        if (!paused) {
-            Uint32 now = SDL_GetTicks();
-            while (now - lastTickMs >= (Uint32)tickIntervalMs) {
-                factory.tick();
-                lastTickMs += tickIntervalMs;
-            }
-        }
+        runControlManager.update(factory);
         const auto snaps = factory.snapshotAll();
 
         // ── Build UI ──────────────────────────────────────────────────────────
@@ -84,22 +77,7 @@ int main(int argc, char* argv[]) {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        // Run Control bar (Play/Pause/Step + tick speed)
-        ImGui::Begin("Run Control");
-        ImGui::Text("Tick: %d", factory.currentTick());
-        ImGui::SameLine();
-        if (ImGui::Button(paused ? "Resume" : "Pause")) {
-            paused = !paused;
-            lastTickMs = SDL_GetTicks();
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Step") && paused) {
-            factory.tick();
-            lastTickMs = SDL_GetTicks();
-        }
-        ImGui::SliderInt("Tick interval (ms)", &tickIntervalMs, 10, 2000);
-        if (ImGui::Button("Reset timer")) lastTickMs = SDL_GetTicks();
-        ImGui::End();
+        runControlManager.render(factory);
 
         // Command panel — UI writes into a fresh Cmd; main forwards to backend
         MachineCmd cmd{};

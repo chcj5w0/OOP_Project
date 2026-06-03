@@ -4,6 +4,8 @@
 #include "Connector.h"
 #include "bridge/MachineCmd.h"
 #include "bridge/MachineSnap.h"
+#include <memory>
+#include <string>
 
 class Machine : public SimObject {
 public:
@@ -24,13 +26,20 @@ public:
     int          progress()     const { return m_progress; }
     int          processTicks() const { return m_processTicks; }
 
+    static int autoRepairDelay() { return s_autoRepairDelay; }
+    static void setAutoRepairDelay(int delay) { if (delay < 1) delay = 1; s_autoRepairDelay = delay; }
+
 protected:
     virtual const char* typeName() const = 0;
-    virtual void onProcessComplete() = 0;
+    virtual std::unique_ptr<Product> createOutput() = 0;
+    virtual int producedCount() const { return 0; }
+    virtual const char* blockedReason() const { return m_blockedReason.c_str(); }
 
     void advanceProgress();
-    void setState(MachineState s) { m_state = s; }
+    void tickAutoRepair();
+    void setState(MachineState s) { m_state = s; if (s != MachineState::BLOCKED) m_blockedReason.clear(); }
     void setHealth(float h)       { m_health = h; }
+    void clearBlockedReason()     { m_blockedReason.clear(); }
 
 private:
     MachineState m_state         = MachineState::IDLE;
@@ -39,4 +48,9 @@ private:
     int          m_processTicks  = 1;
     Connector*   m_in            = nullptr;
     Connector*   m_out           = nullptr;
+    std::unique_ptr<Product> m_pendingOutput;
+    std::string              m_blockedReason;
+    int                      m_autoRepairTimer = 0;
+
+    static int               s_autoRepairDelay;
 };

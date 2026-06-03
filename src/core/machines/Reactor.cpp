@@ -5,6 +5,7 @@ Reactor::Reactor(int id, int processTicks)
 
 void Reactor::update(int tick) {
     (void)tick;
+    tickAutoRepair();
     if (state() == MachineState::BROKEN) return;
 
     if (state() == MachineState::IDLE && input()) {
@@ -17,10 +18,8 @@ void Reactor::update(int tick) {
     advanceProgress();
 }
 
-void Reactor::onProcessComplete() {
-    if (output()) {
-        output()->push(std::make_unique<Intermediate>());
-    }
+std::unique_ptr<Product> Reactor::createOutput() {
+    return std::make_unique<Intermediate>();
 }
 
 std::string Reactor::getInfo() const {

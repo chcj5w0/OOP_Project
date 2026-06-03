@@ -10,7 +10,8 @@ public:
 
 protected:
     const char* typeName() const override { return "TankTerminal"; }
-    void onProcessComplete() override;
+    std::unique_ptr<Product> createOutput() override;
+    int producedCount() const override { return m_finishedProducts; }
 
 private:
     int m_finishedProducts = 0;
