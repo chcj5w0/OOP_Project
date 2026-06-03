@@ -12,6 +12,7 @@
 #include "ui/SimControlUI.h"
 #include "ui/FactoryFloorUI.h"
 #include "ui/InspectorUI.h"
+#include "ui/StatisticsUI.h"
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -50,6 +51,7 @@ int main(int argc, char* argv[]) {
     SimControlUI   simControl;
     FactoryFloorUI floorUI;
     InspectorUI    inspectorUI;
+    StatisticsUI   statisticsUI;
 
     bool   running         = true;
     bool   paused          = false;
@@ -104,6 +106,9 @@ int main(int argc, char* argv[]) {
 
         // Inspector: all machine snapshots
         inspectorUI.render(snaps);
+
+        // Statistics: factory-wide counters
+        statisticsUI.render(factory.stats());
 
         if (cmd.startWork || cmd.forceBreak || cmd.instantRepair) {
             factory.applyCmd(cmd);

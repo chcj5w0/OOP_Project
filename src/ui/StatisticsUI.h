@@ -1,7 +1,8 @@
 #pragma once
-#include "UIObject.h"
 
-class StatisticsUI : public UIObject {
+#include "bridge/FactoryStats.h"
+
+class StatisticsUI {
 public:
-    void render() override;
+    void render(const FactoryStats& stats);
 };
