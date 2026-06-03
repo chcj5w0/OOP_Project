@@ -88,9 +88,15 @@ int main(int argc, char* argv[]) {
         ImGui::Begin("Run Control");
         ImGui::Text("Tick: %d", factory.currentTick());
         ImGui::SameLine();
-        if (ImGui::Button(paused ? "Resume" : "Pause")) paused = !paused;
+        if (ImGui::Button(paused ? "Resume" : "Pause")) {
+            paused = !paused;
+            lastTickMs = SDL_GetTicks();
+        }
         ImGui::SameLine();
-        if (ImGui::Button("Step") && paused) factory.tick();
+        if (ImGui::Button("Step") && paused) {
+            factory.tick();
+            lastTickMs = SDL_GetTicks();
+        }
         ImGui::SliderInt("Tick interval (ms)", &tickIntervalMs, 10, 2000);
         if (ImGui::Button("Reset timer")) lastTickMs = SDL_GetTicks();
         ImGui::End();

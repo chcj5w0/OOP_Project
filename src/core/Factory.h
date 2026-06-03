@@ -7,7 +7,7 @@
 #include <memory>
 #include <vector>
 
-class Pipeline;
+class TankTerminal;
 
 class Factory {
 public:
@@ -20,10 +20,7 @@ public:
     void buildScenarioNormal();
 
 private:
-    void collectFinishedProducts();
-
     std::vector<std::unique_ptr<SimObject>> m_objects;
-    Pipeline* m_finalOutput = nullptr;
+    TankTerminal* m_terminal = nullptr;
     int m_tick = 0;
-    int m_finishedProducts = 0;
 };
