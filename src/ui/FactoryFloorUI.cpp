@@ -23,14 +23,14 @@ static ImVec4 stateColor(MachineState state) {
         case MachineState::IDLE:    return ImVec4(0.72f, 0.72f, 0.72f, 1.0f);
         case MachineState::WORKING: return ImVec4(0.30f, 0.75f, 0.95f, 1.0f);
         case MachineState::BLOCKED: return ImVec4(0.95f, 0.70f, 0.25f, 1.0f);
-        case MachineState::BROKEN:  return ImVec4(0.95f, 0.25f, 0.25f, 1.0f);
+        case MachineState::BROKEN:  return ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     }
     return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 static ImVec4 stateColor(const MachineSnap& snap) {
     if (snap.state == MachineState::BROKEN && snap.repairCountdown > 0) {
-        return ImVec4(0.95f, 0.50f, 0.20f, 1.0f);
+        return ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     }
     return stateColor(snap.state);
 }
