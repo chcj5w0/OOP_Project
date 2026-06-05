@@ -7,11 +7,51 @@
 #include "machines/SourceTank.h"
 #include "machines/Reactor.h"
 #include "machines/Separator.h"
+#include "ui/EventLogUI.h"
+
+static const char* stateToString(MachineState state) {
+    switch (state) {
+        case MachineState::IDLE:    return "IDLE";
+        case MachineState::WORKING: return "WORKING";
+        case MachineState::BLOCKED: return "BLOCKED";
+        case MachineState::BROKEN:  return "BROKEN";
+    }
+    return "UNKNOWN";
+}
 
 void Factory::tick() {
+    // Save machine states before update
+    m_machineStatesBefore.clear();
+    for (const auto& o : m_objects) {
+        if (auto* m = dynamic_cast<Machine*>(o.get())) {
+            m_machineStatesBefore.push_back(m->state());
+        }
+    }
+    
+    // Update all objects
     for (auto& o : m_objects) {
         o->update(m_tick);
     }
+    
+    // Check for state changes and log events
+    int machineIdx = 0;
+    for (const auto& o : m_objects) {
+        if (auto* m = dynamic_cast<Machine*>(o.get())) {
+            if (machineIdx < static_cast<int>(m_machineStatesBefore.size()) && 
+                m_machineStatesBefore[machineIdx] != m->state()) {
+                if (m_eventLogUI) {
+                    char msg[256];
+                    snprintf(msg, sizeof(msg), "Machine %d: %s → %s", 
+                             m->id(), 
+                             stateToString(m_machineStatesBefore[machineIdx]),
+                             stateToString(m->state()));
+                    m_eventLogUI->addEvent(m_tick, msg);
+                }
+            }
+            ++machineIdx;
+        }
+    }
+    
     ++m_tick;
 }
 

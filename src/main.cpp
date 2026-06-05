@@ -14,6 +14,7 @@
 #include "ui/InspectorUI.h"
 #include "ui/StatisticsUI.h"
 #include "ui/RunControlManager.h"
+#include "ui/EventLogUI.h"
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -54,6 +55,11 @@ int main(int argc, char* argv[]) {
     InspectorUI       inspectorUI;
     StatisticsUI      statisticsUI;
     RunControlManager runControlManager;
+    EventLogUI        eventLogUI;
+    
+    // Connect event logging
+    factory.setEventLogUI(&eventLogUI);
+    eventLogUI.addEvent(0, "Simulation started");
 
     bool running         = true;
     int  inspectorTarget = 1;
@@ -93,6 +99,9 @@ int main(int argc, char* argv[]) {
 
         // Statistics: factory-wide counters
         statisticsUI.render(factory.stats());
+
+        // Event Log
+        eventLogUI.render();
 
         if (cmd.startWork || cmd.forceBreak || cmd.instantRepair) {
             factory.applyCmd(cmd);

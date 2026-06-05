@@ -8,6 +8,7 @@
 #include <vector>
 
 class TankTerminal;
+class EventLogUI;
 
 class Factory {
 public:
@@ -18,9 +19,12 @@ public:
     int  currentTick() const { return m_tick; }
 
     void buildScenarioNormal();
+    void setEventLogUI(EventLogUI* ui) { m_eventLogUI = ui; }
 
 private:
     std::vector<std::unique_ptr<SimObject>> m_objects;
+    std::vector<MachineState> m_machineStatesBefore;
     TankTerminal* m_terminal = nullptr;
+    EventLogUI* m_eventLogUI = nullptr;
     int m_tick = 0;
 };
