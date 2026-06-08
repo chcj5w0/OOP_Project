@@ -24,6 +24,8 @@ public:
 private:
     std::vector<std::unique_ptr<SimObject>> m_objects;
     std::vector<MachineState> m_machineStatesBefore;
+    std::vector<float> m_machineHealthBefore;
+    int m_prevTankTerminalFinished = 0;
     TankTerminal* m_terminal = nullptr;
     EventLogUI* m_eventLogUI = nullptr;
     int m_tick = 0;
