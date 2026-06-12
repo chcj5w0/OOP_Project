@@ -118,6 +118,16 @@ std::vector<MachineSnap> Factory::snapshotAll() const {
     return snaps;
 }
 
+std::vector<ConnectorSnap> Factory::snapshotConnectors() const {
+    std::vector<ConnectorSnap> snaps;
+    for (const auto& o : m_objects) {
+        if (auto* c = dynamic_cast<const Connector*>(o.get())) {
+            snaps.push_back(c->snapshot());
+        }
+    }
+    return snaps;
+}
+
 FactoryStats Factory::stats() const {
     FactoryStats s{};
     s.currentTick = m_tick;

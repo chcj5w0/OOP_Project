@@ -1,4 +1,5 @@
 #include "RunControlManager.h"
+#include "UILayout.h"
 #include "core/Machine.h"
 #include <SDL.h>
 #include <imgui.h>
@@ -18,6 +19,7 @@ void RunControlManager::update(Factory& factory) {
 }
 
 void RunControlManager::render(Factory& factory) {
+    UILayout::placeRunControl();
     ImGui::Begin("Run Control");
 
     ImGui::Text("Tick: %d", factory.currentTick());
@@ -42,6 +44,10 @@ void RunControlManager::render(Factory& factory) {
 
     if (ImGui::Button("Reset timer")) {
         resetTimer();
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset Layout")) {
+        UILayout::requestReset();
     }
 
     ImGui::End();

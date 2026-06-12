@@ -1,4 +1,5 @@
 #include "EventLogUI.h"
+#include "UILayout.h"
 #include <imgui.h>
 
 void EventLogUI::addEvent(int tick, const std::string& message) {
@@ -9,6 +10,7 @@ void EventLogUI::addEvent(int tick, const std::string& message) {
 }
 
 void EventLogUI::render() {
+    UILayout::placeEventLog();
     ImGui::Begin("Event Log");
     
     ImGui::Text("Total events: %zu", m_events.size());

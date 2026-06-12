@@ -1,5 +1,6 @@
 #include "InspectorUI.h"
 #include "StateStyle.h"
+#include "UILayout.h"
 #include <imgui.h>
 
 static float workProgressRatio(const MachineSnap& snap) {
@@ -8,6 +9,7 @@ static float workProgressRatio(const MachineSnap& snap) {
 }
 
 void InspectorUI::render() {
+    UILayout::placeInspector();
     ImGui::Begin("Inspector");
 
     if (m_snaps.empty()) {

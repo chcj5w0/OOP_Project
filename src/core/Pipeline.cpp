@@ -29,3 +29,12 @@ int Pipeline::size() const {
 int Pipeline::capacity() const {
     return m_capacity;
 }
+
+std::vector<std::string> Pipeline::slotNames() const {
+    std::vector<std::string> names;
+    names.reserve(m_queue.size());
+    for (const auto& p : m_queue) {
+        names.push_back(p->name());
+    }
+    return names;
+}

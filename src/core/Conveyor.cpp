@@ -39,3 +39,11 @@ int Conveyor::size() const {
 int Conveyor::capacity() const {
     return m_capacity;
 }
+
+std::vector<std::string> Conveyor::slotNames() const {
+    std::vector<std::string> names(m_slots.size());
+    for (std::size_t i = 0; i < m_slots.size(); ++i) {
+        if (m_slots[i]) names[i] = m_slots[i]->name();
+    }
+    return names;
+}

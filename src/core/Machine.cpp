@@ -40,6 +40,8 @@ MachineSnap Machine::snapshot() const {
     snap.outputCapacity = m_out ? m_out->capacity() : 0;
     snap.producedCount  = producedCount();
     snap.repairCountdown= m_state == MachineState::BROKEN ? m_autoRepairTimer : 0;
+    snap.inputId        = m_in  ? m_in->id()  : -1;
+    snap.outputId       = m_out ? m_out->id() : -1;
     snap.blockedReason  = m_blockedReason;
     return snap;
 }

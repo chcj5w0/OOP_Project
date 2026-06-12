@@ -17,5 +17,7 @@ struct MachineSnap {
     int          outputCapacity;
     int          producedCount;
     int          repairCountdown;
+    int          inputId;   // id of the attached input connector, -1 if none
+    int          outputId;  // id of the attached output connector, -1 if none
     std::string  blockedReason;
 };

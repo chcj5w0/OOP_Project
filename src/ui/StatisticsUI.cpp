@@ -1,7 +1,9 @@
 #include "StatisticsUI.h"
+#include "UILayout.h"
 #include <imgui.h>
 
 void StatisticsUI::render() {
+    UILayout::placeStatistics();
     ImGui::Begin("Statistics");
 
     ImGui::Text("Current tick: %d", m_stats.currentTick);

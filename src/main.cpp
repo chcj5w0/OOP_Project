@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "core/Factory.h"
+#include "bridge/ConnectorSnap.h"
 #include "bridge/MachineCmd.h"
 #include "bridge/MachineSnap.h"
 #include "ui/UIObject.h"
@@ -18,6 +19,7 @@
 #include "ui/StatisticsUI.h"
 #include "ui/RunControlManager.h"
 #include "ui/EventLogUI.h"
+#include "ui/UILayout.h"
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
@@ -55,13 +57,14 @@ int main(int argc, char* argv[]) {
     // ── UI layer ──────────────────────────────────────────────────────────────
     // Shared frame data: views hold references to these and read them in render().
     // They outlive every UI object below.
-    std::vector<MachineSnap> snaps;
-    FactoryStats             stats{};
-    MachineCmd               cmd{};
+    std::vector<MachineSnap>   snaps;
+    std::vector<ConnectorSnap> connSnaps;
+    FactoryStats               stats{};
+    MachineCmd                 cmd{};
     cmd.targetId = 1;
 
-    SimControlUI      simControl(cmd);
-    FactoryFloorUI    floorUI(snaps);
+    SimControlUI      simControl(cmd, snaps);
+    FactoryFloorUI    floorUI(snaps, connSnaps, cmd);
     InspectorUI       inspectorUI(snaps);
     StatisticsUI      statisticsUI(stats);
     RunControlManager runControlManager;
@@ -89,13 +92,15 @@ int main(int argc, char* argv[]) {
 
         // ── Tick the backend ──────────────────────────────────────────────────
         runControlManager.update(factory);
-        snaps = factory.snapshotAll();
-        stats = factory.stats();
+        snaps     = factory.snapshotAll();
+        connSnaps = factory.snapshotConnectors();
+        stats     = factory.stats();
 
         // ── Build UI ──────────────────────────────────────────────────────────
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
+        UILayout::beginFrame();
 
         runControlManager.render(factory);
 

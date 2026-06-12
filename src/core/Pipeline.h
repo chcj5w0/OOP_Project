@@ -14,6 +14,10 @@ public:
     int size() const override;
     int capacity() const override;
 
+protected:
+    const char* typeName() const override { return "Pipeline"; }
+    std::vector<std::string> slotNames() const override;
+
 private:
     int m_capacity;
     std::deque<std::unique_ptr<Product>> m_queue;

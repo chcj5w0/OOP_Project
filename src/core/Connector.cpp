@@ -1,3 +1,11 @@
 #include "Connector.h"
 
-// Connector is an abstract interface; no implementation required here.
+ConnectorSnap Connector::snapshot() const {
+    ConnectorSnap snap{};
+    snap.id       = id();
+    snap.typeName = typeName();
+    snap.size     = size();
+    snap.capacity = capacity();
+    snap.slots    = slotNames();
+    return snap;
+}

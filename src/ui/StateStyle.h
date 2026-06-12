@@ -36,3 +36,20 @@ inline ImVec4 stateColor(MachineState state) {
 inline ImVec4 stateColor(const MachineSnap& snap) {
     return stateColor(snap.state);
 }
+
+// Color per product type, used for the dots travelling through connectors.
+inline ImVec4 productColor(const std::string& productName) {
+    if (productName == "RawFeed")         return ImVec4(0.62f, 0.46f, 0.26f, 1.0f); // crude brown
+    if (productName == "Intermediate")    return ImVec4(0.93f, 0.66f, 0.22f, 1.0f); // amber
+    if (productName == "FinishedProduct") return ImVec4(0.35f, 0.85f, 0.42f, 1.0f); // green
+    return ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+}
+
+// Green→yellow→red gradient for health gauges.
+inline ImVec4 healthColor(float health) {
+    if (health < 0.0f) health = 0.0f;
+    if (health > 1.0f) health = 1.0f;
+    float r = health < 0.5f ? 1.0f : 2.0f * (1.0f - health);
+    float g = health > 0.5f ? 1.0f : 2.0f * health;
+    return ImVec4(r * 0.9f, g * 0.8f, 0.15f, 1.0f);
+}

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SimObject.h"
+#include "bridge/ConnectorSnap.h"
 #include "bridge/FactoryStats.h"
 #include "bridge/MachineCmd.h"
 #include "bridge/MachineSnap.h"
@@ -15,6 +16,7 @@ public:
     void tick();
     void applyCmd(const MachineCmd& cmd);
     std::vector<MachineSnap> snapshotAll() const;
+    std::vector<ConnectorSnap> snapshotConnectors() const;
     FactoryStats stats() const;
     int  currentTick() const { return m_tick; }
 
