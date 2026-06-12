@@ -6,9 +6,12 @@
 #include "imgui_impl_opengl3.h"
 #include <cstdio>
 
+#include <vector>
+
 #include "core/Factory.h"
 #include "bridge/MachineCmd.h"
 #include "bridge/MachineSnap.h"
+#include "ui/UIObject.h"
 #include "ui/SimControlUI.h"
 #include "ui/FactoryFloorUI.h"
 #include "ui/InspectorUI.h"
@@ -50,19 +53,29 @@ int main(int argc, char* argv[]) {
     factory.buildScenarioNormal();
 
     // ── UI layer ──────────────────────────────────────────────────────────────
-    SimControlUI      simControl;
-    FactoryFloorUI    floorUI;
-    InspectorUI       inspectorUI;
-    StatisticsUI      statisticsUI;
+    // Shared frame data: views hold references to these and read them in render().
+    // They outlive every UI object below.
+    std::vector<MachineSnap> snaps;
+    FactoryStats             stats{};
+    MachineCmd               cmd{};
+    cmd.targetId = 1;
+
+    SimControlUI      simControl(cmd);
+    FactoryFloorUI    floorUI(snaps);
+    InspectorUI       inspectorUI(snaps);
+    StatisticsUI      statisticsUI(stats);
     RunControlManager runControlManager;
     EventLogUI        eventLogUI;
-    
+
+    std::vector<UIObject*> uiObjects = {
+        &simControl, &floorUI, &inspectorUI, &statisticsUI, &eventLogUI,
+    };
+
     // Connect event logging
     factory.setEventLogUI(&eventLogUI);
     eventLogUI.addEvent(0, "Simulation started");
 
-    bool running         = true;
-    int  inspectorTarget = 1;
+    bool running = true;
 
     while (running) {
         SDL_Event event;
@@ -76,7 +89,8 @@ int main(int argc, char* argv[]) {
 
         // ── Tick the backend ──────────────────────────────────────────────────
         runControlManager.update(factory);
-        const auto snaps = factory.snapshotAll();
+        snaps = factory.snapshotAll();
+        stats = factory.stats();
 
         // ── Build UI ──────────────────────────────────────────────────────────
         ImGui_ImplOpenGL3_NewFrame();
@@ -85,27 +99,15 @@ int main(int argc, char* argv[]) {
 
         runControlManager.render(factory);
 
-        // Command panel — UI writes into a fresh Cmd; main forwards to backend
-        MachineCmd cmd{};
-        cmd.targetId = inspectorTarget;
-        simControl.render(cmd);
-        inspectorTarget = cmd.targetId;
-
-        // Factory floor: all machines
-        floorUI.render(snaps);
-
-        // Inspector: all machine snapshots
-        inspectorUI.render(snaps);
-
-        // Statistics: factory-wide counters
-        statisticsUI.render(factory.stats());
-
-        // Event Log
-        eventLogUI.render();
+        for (UIObject* ui : uiObjects) {
+            ui->render();
+        }
 
         if (cmd.startWork || cmd.forceBreak || cmd.instantRepair) {
             factory.applyCmd(cmd);
         }
+        // Command flags are one-shot; targetId persists across frames.
+        cmd.startWork = cmd.forceBreak = cmd.instantRepair = false;
 
         // ── Render ────────────────────────────────────────────────────────────
         ImGui::Render();

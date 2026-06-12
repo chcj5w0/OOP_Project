@@ -40,10 +40,10 @@ static float workProgressRatio(const MachineSnap& snap) {
     return static_cast<float>(snap.progress) / static_cast<float>(snap.processTicks);
 }
 
-void InspectorUI::render(const std::vector<MachineSnap>& snaps) {
+void InspectorUI::render() {
     ImGui::Begin("Inspector");
 
-    if (snaps.empty()) {
+    if (m_snaps.empty()) {
         ImGui::Text("No machines");
         ImGui::End();
         return;
@@ -68,7 +68,7 @@ void InspectorUI::render(const std::vector<MachineSnap>& snaps) {
         ImGui::TableSetupColumn("Reason");
         ImGui::TableHeadersRow();
 
-        for (const auto& snap : snaps) {
+        for (const auto& snap : m_snaps) {
             ImGui::PushID(snap.id);
             ImGui::TableNextRow();
 

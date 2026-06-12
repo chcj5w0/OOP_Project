@@ -5,6 +5,9 @@
 
 class FactoryFloorUI : public UIObject {
 public:
+    explicit FactoryFloorUI(const std::vector<MachineSnap>& snaps) : m_snaps(snaps) {}
     void render() override;
-    void render(const std::vector<MachineSnap>& snaps);
+
+private:
+    const std::vector<MachineSnap>& m_snaps;
 };

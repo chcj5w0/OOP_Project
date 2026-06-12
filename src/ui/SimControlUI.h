@@ -4,6 +4,9 @@
 
 class SimControlUI : public UIObject {
 public:
+    explicit SimControlUI(MachineCmd& cmd) : m_cmd(cmd) {}
     void render() override;
-    void render(MachineCmd& cmd);
+
+private:
+    MachineCmd& m_cmd;
 };

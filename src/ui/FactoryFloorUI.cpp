@@ -37,13 +37,12 @@ static ImVec4 stateColor(const MachineSnap& snap) {
 
 void FactoryFloorUI::render() {
     ImGui::Begin("Factory Floor");
-    ImGui::TextDisabled("No machine snapshot data available.");
-    ImGui::End();
-}
-
-void FactoryFloorUI::render(const std::vector<MachineSnap>& snaps) {
-    ImGui::Begin("Factory Floor");
-    for (const auto& snap : snaps) {
+    if (m_snaps.empty()) {
+        ImGui::TextDisabled("No machine snapshot data available.");
+        ImGui::End();
+        return;
+    }
+    for (const auto& snap : m_snaps) {
         const char* reason = snap.blockedReason.empty() ? "-" : snap.blockedReason.c_str();
         if (snap.repairCountdown > 0) {
             ImGui::TextColored(stateColor(snap), "ID %d (%s): %s | in %d/%d out %d/%d prod %d | repair in %d ticks | %s",

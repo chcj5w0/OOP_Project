@@ -1,8 +1,13 @@
 #pragma once
 
+#include "UIObject.h"
 #include "bridge/FactoryStats.h"
 
-class StatisticsUI {
+class StatisticsUI : public UIObject {
 public:
-    void render(const FactoryStats& stats);
+    explicit StatisticsUI(const FactoryStats& stats) : m_stats(stats) {}
+    void render() override;
+
+private:
+    const FactoryStats& m_stats;
 };

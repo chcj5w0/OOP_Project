@@ -10,7 +10,7 @@ struct Event {
 
 class EventLogUI : public UIObject {
 public:
-    void render();
+    void render() override;
     void addEvent(int tick, const std::string& message);
     
 private:

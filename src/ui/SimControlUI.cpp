@@ -3,15 +3,9 @@
 
 void SimControlUI::render() {
     ImGui::Begin("Simulation Control");
-    ImGui::TextDisabled("No simulation controller connected.");
-    ImGui::End();
-}
-
-void SimControlUI::render(MachineCmd& cmd) {
-    ImGui::Begin("Simulation Control");
-    ImGui::Checkbox("Start Work", &cmd.startWork);
-    ImGui::Checkbox("Force Break", &cmd.forceBreak);
-    ImGui::Checkbox("Instant Repair", &cmd.instantRepair);
-    ImGui::InputInt("Target ID", &cmd.targetId);
+    ImGui::Checkbox("Start Work", &m_cmd.startWork);
+    ImGui::Checkbox("Force Break", &m_cmd.forceBreak);
+    ImGui::Checkbox("Instant Repair", &m_cmd.instantRepair);
+    ImGui::InputInt("Target ID", &m_cmd.targetId);
     ImGui::End();
 }

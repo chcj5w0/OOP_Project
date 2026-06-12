@@ -1,8 +1,13 @@
 #pragma once
+#include "UIObject.h"
 #include "bridge/MachineSnap.h"
 #include <vector>
 
-class InspectorUI {
+class InspectorUI : public UIObject {
 public:
-    void render(const std::vector<MachineSnap>& snaps);
+    explicit InspectorUI(const std::vector<MachineSnap>& snaps) : m_snaps(snaps) {}
+    void render() override;
+
+private:
+    const std::vector<MachineSnap>& m_snaps;
 };
