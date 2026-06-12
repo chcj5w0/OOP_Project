@@ -245,6 +245,9 @@ SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTermi
 
 ## 6. 설계 평가 — 잘된 점과 알려진 한계
 
+> 강의 자료(SOLID, Observer/Memento/State 패턴)와의 상세 매핑 및 개선 로드맵은
+> [docs/DESIGN_PATTERNS.md](docs/DESIGN_PATTERNS.md) 참조.
+
 ### 잘된 점
 
 1. **두 개의 대칭적 다형성 루프** — 백엔드(`SimObject`)와 UI(`UIObject`)가 같은 구조.
@@ -281,7 +284,7 @@ SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTermi
 my_imgui_app/
 ├── CMakeLists.txt              # SDL2+OpenGL, src/**.cpp 자동 수집
 ├── README.md                   # (이 문서) 프로젝트 전체 설명
-├── docs/                       # StarUML 다이어그램 (.mdj) + 내보낸 PNG
+├── docs/                       # StarUML 다이어그램 (.mdj/.png) + DESIGN_PATTERNS.md (수업 내용 매핑)
 ├── captures/                   # 실행 스크린샷
 ├── libs/imgui/                 # Dear ImGui 소스 (동봉)
 └── src/
