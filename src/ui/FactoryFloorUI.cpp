@@ -1,39 +1,6 @@
 #include "FactoryFloorUI.h"
+#include "StateStyle.h"
 #include <imgui.h>
-
-static const char* stateLabel(MachineState s) {
-    switch (s) {
-        case MachineState::IDLE:    return "IDLE";
-        case MachineState::WORKING: return "WORKING";
-        case MachineState::BLOCKED: return "BLOCKED";
-        case MachineState::BROKEN:  return "BROKEN";
-    }
-    return "?";
-}
-
-static const char* stateLabel(const MachineSnap& snap) {
-    if (snap.state == MachineState::BROKEN && snap.repairCountdown > 0) {
-        return "BROKEN (repairing)";
-    }
-    return stateLabel(snap.state);
-}
-
-static ImVec4 stateColor(MachineState state) {
-    switch (state) {
-        case MachineState::IDLE:    return ImVec4(0.72f, 0.72f, 0.72f, 1.0f);
-        case MachineState::WORKING: return ImVec4(0.30f, 0.75f, 0.95f, 1.0f);
-        case MachineState::BLOCKED: return ImVec4(0.95f, 0.70f, 0.25f, 1.0f);
-        case MachineState::BROKEN:  return ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    }
-    return ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-}
-
-static ImVec4 stateColor(const MachineSnap& snap) {
-    if (snap.state == MachineState::BROKEN && snap.repairCountdown > 0) {
-        return ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
-    }
-    return stateColor(snap.state);
-}
 
 void FactoryFloorUI::render() {
     ImGui::Begin("Factory Floor");
