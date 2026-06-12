@@ -3,29 +3,29 @@
 Conveyor::Conveyor(int id, int capacity)
     : Connector(id), m_capacity(capacity), m_slots(capacity) {}
 
+// Belt layout: slot 0 is the exit end, slot capacity-1 is the entry end.
+// Each tick every product advances one slot toward the exit if the slot
+// ahead is free; pop() only delivers the product sitting at the exit.
 void Conveyor::update(int tick) {
     (void)tick;
+    for (std::size_t i = 0; i + 1 < m_slots.size(); ++i) {
+        if (!m_slots[i] && m_slots[i + 1]) {
+            m_slots[i] = std::move(m_slots[i + 1]);
+        }
+    }
 }
 
 bool Conveyor::push(std::unique_ptr<Product> p) {
-    for (auto& slot : m_slots) {
-        if (!slot) {
-            slot = std::move(p);
-            return true;
-        }
-    }
-    return false;
+    if (m_slots.empty() || m_slots.back())
+        return false;
+    m_slots.back() = std::move(p);
+    return true;
 }
 
 std::unique_ptr<Product> Conveyor::pop() {
-    for (auto& slot : m_slots) {
-        if (slot) {
-            auto item = std::move(slot);
-            slot.reset();
-            return item;
-        }
-    }
-    return nullptr;
+    if (m_slots.empty() || !m_slots.front())
+        return nullptr;
+    return std::move(m_slots.front());
 }
 
 int Conveyor::size() const {
