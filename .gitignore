@@ -22,7 +22,6 @@ imgui.ini
 captures/
 
 # Reference materials (not source code)
-*.pdf
 ImGui_CrossPlatform_cmake_tutorial.html
 
 # IDE / OS
