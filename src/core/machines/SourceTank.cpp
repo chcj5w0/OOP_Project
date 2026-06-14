@@ -19,7 +19,13 @@ void SourceTank::update(int tick) {
     if (!output()) return;
 
     if (!output()->push(std::make_unique<RawFeed>())) {
-        setState(MachineState::BLOCKED);
+        // Output full. In overflow mode the feed spills and is counted as lost
+        // so the source keeps producing; otherwise back off into BLOCKED.
+        if (dropsOnOverflow()) {
+            recordLostProduct();
+        } else {
+            setState(MachineState::BLOCKED);
+        }
     }
 }
 

@@ -1,9 +1,10 @@
 #include "RunControlManager.h"
 #include "UILayout.h"
 #include "core/Machine.h"
+#include "core/Factory.h"
+#include "core/Scenario.h"
 #include <SDL.h>
 #include <imgui.h>
-#include "core/Factory.h"
 
 RunControlManager::RunControlManager(int tickIntervalMs)
     : m_paused(false), m_tickIntervalMs(tickIntervalMs), m_lastTickMs(SDL_GetTicks()) {}
@@ -22,6 +23,23 @@ void RunControlManager::render(Factory& factory) {
     UILayout::placeRunControl();
     ImGui::Begin("Run Control");
 
+    // Scenario selector (§2.1): iterate the registry — no switch on type here,
+    // so adding a scenario needs no change to this loop.
+    const Scenario* current = factory.currentScenario();
+    const char* currentName = current ? current->name() : "(none)";
+    if (ImGui::BeginCombo("Scenario", currentName)) {
+        for (const Scenario* scn : allScenarios()) {
+            if (ImGui::Selectable(scn->name(), scn == current)) {
+                factory.loadScenario(*scn);
+                resetTimer();
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", scn->description());
+            }
+        }
+        ImGui::EndCombo();
+    }
+
     ImGui::Text("Tick: %d", factory.currentTick());
     ImGui::SameLine();
     if (ImGui::Button(m_paused ? "Resume" : "Pause")) {
@@ -30,6 +48,11 @@ void RunControlManager::render(Factory& factory) {
     ImGui::SameLine();
     if (ImGui::Button("Step") && m_paused) {
         step(factory);
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset")) {
+        factory.reset();
+        resetTimer();
     }
 
     ImGui::SliderInt("Tick interval (ms)", &m_tickIntervalMs, 10, 2000);

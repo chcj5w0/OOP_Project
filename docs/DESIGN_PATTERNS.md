@@ -2,22 +2,23 @@
 
 > 교수님 강의 자료(SOLID, Observer, Memento, State 패턴)를 기준으로
 > 현재 구현이 무엇을 보여주고 있고, 무엇이 비어 있으며, 어떤 순서로 보강할지 정리한 문서.
-> 전체 아키텍처 설명은 [README.md](../README.md) 참조. (작성: 2026-06-12)
+> 전체 아키텍처 설명은 [README.md](../README.md) 참조. (작성: 2026-06-12, 갱신: 2026-06-14)
 
 ---
 
 ## 0. 한눈에 보기
 
-| 강의 주제 | 현재 상태 | 판정 | 조치 |
+| 강의 주제 | 현재 상태 | 판정 | 비고 |
 |---|---|---|---|
-| SOLID 5원칙 | 코드 전반에 적용되어 있음 | ✅ 양호 | 발표용 사례 정리 (이 문서 §1) |
-| Observer 패턴 | **미적용** — 오히려 강의의 "나쁜 예"와 같은 구조가 존재 | 🔴 문제 | 이벤트 시스템 리팩토링 (§2) |
-| Memento 패턴 | 미적용 (스냅샷은 있으나 복원 불가) | 🟡 기회 | 저장/복원 기능 추가 (§3) |
-| State 패턴 | enum 기반 상태머신 (GoF State 클래스 아님) | 🟡 설명 필요 | 의도적 미적용 — 방어 논리 준비 (§4) |
+| SOLID 5원칙 | 코드 전반에 적용 | ✅ 양호 | 발표용 사례 정리 (§1) |
+| Observer 패턴 | **적용 완료** — `IEventObserver`로 Factory↔EventLogUI 분리 | ✅ 완료 | §2 |
+| 다형 시나리오 (OCP) | **적용 완료** — `Scenario` 추상+구체 4종 레지스트리 | ✅ 완료 | §2.5 |
+| Memento 패턴 | 미적용 (스냅샷은 있으나 복원 불가) | 🟡 선택 | 저장/복원 (§3) |
+| State 패턴 | enum 기반 상태머신 (GoF State 클래스 아님) | 🟡 설명 | 의도적 미적용 — 방어 논리 (§4) |
 
-핵심 결론: **Observer 리팩토링이 최우선**이다. 이미 알려진 설계 결함(core→ui 역방향 의존)의
-해법이 강의 자료에 그대로 나와 있어서, "수업 내용을 이해하고 자기 코드의 문제에 적용했다"를
-가장 직접적으로 보여줄 수 있는 작업이다.
+핵심 결론: 강의의 "나쁜 예"(tight coupling)와 동형이던 이벤트 로깅을 **Observer 패턴으로
+리팩토링 완료**했고, PDF가 요구한 4종 시나리오를 **다형 `Scenario` 계층(OCP)**으로 구현했다.
+이제 core는 ui를 전혀 모른 채 컴파일된다(헤드리스 테스트로 확인).
 
 ---
 
@@ -91,13 +92,13 @@ Conveyor는 push/pop의 **계약**(가득 차면 false, 비었으면 nullptr)을
 우리의 대응:
 - `Machine`(상위 정책: 공정 흐름)은 `Connector`(추상)에 의존, 구체 Pipeline/Conveyor를 모름
 - UI는 core 구체 클래스가 아니라 `bridge/`의 POD에 의존
-- **위반 사례 1건 잔존**: `Factory.cpp` → `ui/EventLogUI.h` 직접 include.
-  상위(core)가 하위 세부사항(특정 UI 위젯)에 의존하는, 강의가 경고하는 바로 그 구조.
-  → §2의 Observer 리팩토링이 이걸 해소한다.
+- **(과거 위반, 현재 해소)**: 예전에는 `Factory.cpp`가 `ui/EventLogUI.h`를 직접
+  include했다 — 상위(core)가 하위 세부사항(UI 위젯)에 의존하는 DIP 위반.
+  §2의 Observer 리팩토링으로 제거되어, 이제 core는 ui를 전혀 모른다.
 
 ---
 
-## 2. Observer 패턴 — 🔴 최우선 개선 (이벤트 시스템)
+## 2. Observer 패턴 — ✅ 적용 완료 (이벤트 시스템)
 
 ### 강의 내용 요약
 
@@ -109,66 +110,77 @@ dataSource가 formulaSheet·chart를 **직접 참조해 직접 호출**하면:
 순회하며 다형적으로 통지한다. 통지에 값을 실어 보내면 **push 스타일**,
 옵저버가 Subject에서 읽어가면 **pull 스타일**.
 
-### 우리 코드의 현재 상태 — 강의의 "나쁜 예"와 동형
+### 리팩토링 전 — 강의의 "나쁜 예"와 동형이었다
 
-```cpp
-// Factory.cpp (현재) — dataSource가 chart를 직접 호출하는 것과 같은 구조
-#include "ui/EventLogUI.h"          // core가 ui를 안다!
-...
-if (m_eventLogUI) {
-    m_eventLogUI->addEvent(m_tick, msg);   // 구체 클래스 직접 호출
-}
-```
+예전 `Factory.cpp`는 `dataSource`가 `chart`를 직접 호출하던 것과 같은 구조였다:
+`#include "ui/EventLogUI.h"`로 core가 ui를 알았고, `m_eventLogUI->addEvent(...)`로
+구체 UI 클래스를 직접 호출했다. 강의의 나쁜 예와 일대일로 대응한다:
 
-| 강의의 나쁜 예 | 우리 코드 |
+| 강의의 나쁜 예 | (리팩토링 전) 우리 코드 |
 |---|---|
 | `dataSource` | `Factory` |
 | `formulaSheet& fS` 멤버 | `EventLogUI* m_eventLogUI` 멤버 |
 | `fS.setValue(value)` 직접 호출 | `m_eventLogUI->addEvent(...)` 직접 호출 |
 | chart 추가 시 dataSource 수정 | 새 이벤트 소비자 추가 시 Factory 수정 |
 
-README §6에 "core→ui 역방향 의존"으로 기록해둔 한계가 정확히 이것이다.
+### 적용한 설계 (push 스타일)
 
-### 개선 설계 (push 스타일)
-
-이벤트가 (tick, message)로 단순하고, 옵저버가 Factory 내부를 되캐물을 이유가 없으므로
-**push 스타일**이 적합하다 (pull은 옵저버가 Subject 참조를 들고 있어야 해서 결합이 더 생긴다).
+이벤트가 (tick, message)로 단순하고 옵저버가 Factory 내부를 되캐물을 이유가 없어
+**push 스타일**을 택했다. 실제 반영된 구조:
 
 ```
-src/bridge/IEventObserver.h   ← 추상 인터페이스 (POD는 아니지만 순수 추상 = 의존성 없음)
+src/bridge/IEventObserver.h   ← 순수 추상 인터페이스 (의존성 없음 → bridge에 위치)
    class IEventObserver {
-   public:
-       virtual ~IEventObserver() = default;
        virtual void onEvent(int tick, const std::string& message) = 0;
    };
 
-src/core/Factory   (Subject 역할)
-   - EventLogUI* m_eventLogUI            → std::vector<IEventObserver*> m_observers
-   - setEventLogUI(...)                  → addObserver(IEventObserver*)
-   - m_eventLogUI->addEvent(t, msg)      → notify(t, msg)  { for (auto* o : m_observers) o->onEvent(t, msg); }
-   - #include "ui/EventLogUI.h" 삭제     → #include "bridge/IEventObserver.h"
+src/core/Factory   (Subject)
+   std::vector<IEventObserver*> m_observers;
+   void addObserver(IEventObserver*);
+   void emitEvent(const char* fmt, ...);   // 포맷 후 전 옵저버에 onEvent 통지
+   #include "bridge/IEventObserver.h"      // (ui/EventLogUI.h 제거됨)
 
-src/ui/EventLogUI   (ConcreteObserver 역할)
-   - class EventLogUI : public UIObject, public IEventObserver
-   - onEvent(tick, msg) { addEvent(tick, msg); }
+src/ui/EventLogUI   (ConcreteObserver)
+   class EventLogUI : public UIObject, public IEventObserver
+   void onEvent(int tick, const std::string& m) override { addEvent(tick, m); }
 
 src/main.cpp
-   - factory.setEventLogUI(&eventLogUI)  → factory.addObserver(&eventLogUI)
+   factory.addObserver(&eventLogUI);
 ```
 
-bridge에 "행동 있는 클래스를 두면 안 되지 않나?"라는 의문이 나올 수 있는데,
-IEventObserver는 **구현이 전혀 없는 순수 추상 인터페이스**라 어느 쪽에도 의존성을
-끌고 들어오지 않는다. bridge의 본질(양쪽이 안전하게 공유하는 계약)에 부합한다.
-RunControlManager를 bridge로 옮기는 것이 안 됐던 이유(core 의존 행동 클래스)와 대비해서
-설명하면 이해가 쉽다.
+부수 효과로, tick()에 6번 반복되던 `if (m_eventLogUI) { snprintf; addEvent; }` 블록이
+`emitEvent("...", ...)` 한 줄로 줄어 중복도 사라졌다(DRY).
 
-### 기대 효과
+bridge에 클래스를 두는 게 괜찮은가? `IEventObserver`는 **구현이 전혀 없는 순수 추상
+인터페이스**라 어느 쪽 의존성도 끌고 들어오지 않는다. (행동+core 의존을 가진
+`RunControlManager`를 bridge로 옮길 수 없었던 것과 정확히 대비된다.)
 
-1. core→ui include가 사라져 레이어 규칙이 예외 없이 성립 (DIP 위반 해소)
-2. 새 이벤트 소비자(파일 로거, 통계 수집기, 사운드 알림 등)를 Factory 무수정으로 추가 (OCP)
-3. "강의에서 배운 패턴을, 강의가 경고한 바로 그 문제에 적용했다"는 발표 서사
+### 확인된 효과
 
-검증 방법: 빌드 + Xvfb 실행 스크린샷으로 Event Log 창에 이벤트가 계속 흐르는지 확인.
+1. **core→ui include 0건** — `grep -rn "ui/" src/core/` 결과 없음. core만으로 컴파일된다.
+2. 헤드리스 테스트에서 UI 없이 `IEventObserver` 구현체(`CountingObserver`)로 이벤트
+   수신 확인 (Normal 241 / Bottleneck 146 / RandomBreakdowns 211 / Overflow 350건).
+3. 새 이벤트 소비자(파일 로거 등)를 Factory 무수정으로 추가 가능 (OCP).
+
+---
+
+## 2.5 다형 시나리오 — ✅ 적용 완료 (OCP)
+
+PDF §2.1의 4종 시나리오를 **`Scenario` 추상 클래스 + 구체 서브클래스 + 레지스트리**로
+구현했다. 강의의 State 패턴(Canvas가 `Tool*`에 위임해 if-else 제거)과 같은 OCP 동기다:
+
+```
+src/core/Scenario.h   class Scenario { name(); description(); configure(Factory&); };  // 추상
+src/core/Scenario.cpp  NormalScenario / BottleneckScenario / RandomBreakdownsScenario /
+                       OverflowScenario  +  allScenarios() 레지스트리(static 인스턴스)
+src/core/Factory       loadScenario(const Scenario&) → scenario.configure(*this);
+src/ui/RunControlManager  for (auto* s : allScenarios()) Combo 항목  ← 타입 switch 없음
+```
+
+- **Factory도 UI도 시나리오 타입을 switch하지 않는다.** 드롭다운은 레지스트리를 순회할
+  뿐이고, Factory는 선택된 `Scenario`에게 "네가 나를 구성하라"고 위임한다.
+- 시나리오 추가 = 서브클래스 1개 + 레지스트리 1줄. tick 루프·UI 루프·Factory 모두 무수정.
+  PDF 학습목표("새 타입 추가가 루프 수정으로 이어지면 설계 실패")를 시나리오 축에서도 만족.
 
 ---
 
@@ -268,13 +280,25 @@ Canvas는 `Tool* currentTool`에 위임 → 분기 제거 + OCP.
 
 ---
 
-## 5. 실행 계획
+## 5. 실행 계획 / 진행 상황
 
-| 순위 | 작업 | 규모 | 효과 |
-|---|---|---|---|
-| 1 | 이벤트 시스템 Observer 리팩토링 (§2) | 소 (파일 3~4개) | DIP 위반 해소 + 강의 패턴 직접 시연 |
-| 2 | Memento 저장/복원 + UI 버튼 (§3) | 중 | 기능 추가 + 패턴 시연 + 데모 시나리오 |
-| 3 | README §5 표를 SOLID 원칙별로 재정렬 | 소 (문서) | 평가 기준 용어와 정렬 |
-| 4 | UML에 Observer/Memento 반영 후 PNG 재추출 | 소 (모델링) | 산출물 일관성 |
+| 작업 | 상태 | 효과 |
+|---|---|---|
+| 이벤트 시스템 Observer 리팩토링 (§2) | ✅ 완료 | DIP 위반 해소 + 강의 패턴 직접 시연 |
+| 4종 시나리오 다형 `Scenario` 계층 (§2.5) | ✅ 완료 | PDF §2.1 충족 + OCP 시연 |
+| 시나리오 지원 메커니즘(고장확률·overflow·손실/WIP 통계·Clear) | ✅ 완료 | PDF UI/통계 요구 충족 |
+| Memento 저장/복원 + UI 버튼 (§3) | 🟡 선택 | 결정론적 시뮬이라 우선순위 낮음(체크포인트형이면 정당) |
+| UML에 Observer/Scenario 반영 후 PNG 재추출 | ⬜ 남음 | 산출물 일관성 (StarUML 수동 편집) |
 
 State 패턴은 코드 변경 없이 §4의 방어 논리만 발표 준비물로 가져간다.
+
+### 다음 세션에서 할 UML 갱신 (코드는 완료, 모델만 남음)
+
+`docs/UI_bridge.mdj` / `Integrated.mdj`에 반영할 것:
+- **추가**: `IEventObserver`(추상, `onEvent`), `Scenario`(추상, `name/description/configure`) +
+  구체 4종, `EventLogUI`에 `IEventObserver` 실현(realization) 화살표.
+- **관계**: `Factory` ──▷ `IEventObserver`(통지, 비소유 연관 0..*), `EventLogUI` ..|> `IEventObserver`,
+  구체 Scenario ──|> `Scenario`, `Factory` ..> `Scenario`(configure 의존).
+- **삭제**: `Factory` → `EventLogUI` 직접 연관(이제 없음).
+- `MachineSnap`: `inputLoat`→`inputLoad` 오타 수정, `inputId/outputId` 추가(이전 검토 잔여 항목).
+- `FactoryStats`: `totalBreakdowns`, `lostProducts` 추가.

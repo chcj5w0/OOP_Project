@@ -103,9 +103,11 @@ Product (abstract) ── name()=0, virtual ~Product
 `Machine`이 공정의 공통 알고리즘을 소유하고, 하위 클래스는 "차이점"만 채운다.
 
 - **공통 (기반 클래스, `Machine::advanceProgress()`)**
-  틱마다: WORKING이면 체력 0.02 감소 → 0이면 BROKEN 전이 → 진행도 증가 →
-  `processTicks` 도달 시 `createOutput()` 호출 → 산출물을 출력 커넥터에 push →
-  실패하면 BLOCKED(`OUTPUT_FULL`) 상태로 대기, 성공하면 IDLE 복귀.
+  틱마다: WORKING이면 체력 0.02 감소 → 0이면 BROKEN 전이 → (시나리오가 설정한
+  `breakdownProb` 확률로 무작위 BROKEN) → 진행도 증가 → `processTicks` 도달 시
+  `createOutput()` 호출 → 산출물을 출력 커넥터에 push → 성공하면 IDLE 복귀,
+  실패 시 **`dropOnOverflow`면 제품을 버리고(손실 카운트) 계속, 아니면 BLOCKED 대기**.
+  이 두 노브(`breakdownProb` / `dropOnOverflow`)가 시나리오 차별화의 핵심이다.
 - **가변 (하위 클래스가 오버라이드)**
   | 훅 | 역할 | 패턴 |
   |---|---|---|
@@ -172,18 +174,34 @@ SourceTank ─push→ Pipeline ─pop→ Reactor ─push→ Pipeline ─pop→ S
 
 ### 3.5 Factory — 조립과 한 틱의 생애
 
-`Factory::buildScenarioNormal()`이 토폴로지를 조립한다:
+`Factory::build(params)`가 토폴로지를 조립한다(파라미터는 시나리오가 결정):
 
 ```
 SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTerminal[7]
- (3틱마다 방출)  cap8   (4틱 공정)  cap8    (3틱 공정)  cap8     (1틱 처리)
+ (emit틱마다)   cap    (reactor틱)  cap   (sep틱)     conv     (term틱)
 ```
 
 `Factory::tick()` 한 번은: ① 모든 기계의 직전 상태/체력 저장 → ② 등록 순서대로
 전 객체 `update()` → ③ 직전/현재 상태를 비교해 **전이가 일어난 순간만** 이벤트 발행
-(BROKEN/REPAIRED/BLOCKED/WORKING, 체력 30% 임계, 완제품 증가) → ④ 틱 증가.
+(BROKEN/REPAIRED/BLOCKED/WORKING, 체력 30% 임계, 완제품 증가, 손실 발생) → ④ 틱 증가.
 객체 등록 순서가 곧 공정 흐름 순서라서, 같은 틱 안에서 "분리기가 push → 벨트 전진 →
 터미널이 pop"이 자연스럽게 이어진다.
+
+### 3.6 Scenario — 런타임 선택형 시나리오 (PDF §2.1)
+
+같은 파이프라인을 서로 다르게 튜닝한 4종을 런타임 드롭다운으로 전환한다.
+`Scenario`는 추상 클래스이고 각 시나리오는 그 서브클래스다 — **Factory도 UI도
+시나리오 타입을 switch하지 않고** `configure()`/`name()`을 다형적으로 호출하므로,
+시나리오 추가 = 서브클래스 하나 추가 + 레지스트리(`allScenarios()`)에 등록뿐 (OCP).
+
+| 시나리오 | 튜닝 | 관찰되는 현상 (300틱) | 강조 개념 |
+|---|---|---|---|
+| **Normal flow** | 기본값 | 최고 처리량, 손실 0 | 다형 update() |
+| **Bottleneck** | Separator 12틱 | 상류 파이프 적체 → Reactor BLOCKED, WIP↑ | composition / queue capacity |
+| **Random breakdowns** | 고장확률 6% | 잦은 BROKEN, 자동수리(technician) 반복 | state machine |
+| **Overflow** | 느린 Terminal + 작은 컨베이어 + drop | 컨베이어 넘침 → 제품 손실·로깅 (lost↑) | encapsulation / event logging |
+
+![Scenario dropdown](captures/scenario_dropdown_2026-06-14.png)
 
 ---
 
@@ -198,9 +216,9 @@ SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTermi
 | **Factory Floor** | 핵심 시각화. ImDrawList로 직접 그리는 공정 다이어그램 (아래 상세) |
 | **Inspector** | 전 기계의 상태·체력·진행·적재·생산을 한 줄씩 보여주는 테이블 |
 | **Simulation Control** | 대상 기계 콤보 선택 + Start Work / Force Break / Instant Repair 버튼 |
-| **Run Control** | Pause/Resume/Step, 틱 간격·자동수리 지연 슬라이더, Reset Layout |
-| **Statistics** | 현재 틱, 완제품 수, 상태별 기계 수, 총 적재량 |
-| **Event Log** | `[Tick N] Machine 3 WORKING` 형식의 상태 전이 이력 (최근 100건) |
+| **Run Control** | **시나리오 드롭다운**, Pause/Resume/Step/**Reset**, 틱 간격·자동수리 지연 슬라이더, Reset Layout |
+| **Statistics** | 현재 틱, 완제품, **WIP**, **총 고장 수**, **손실 제품(overflow)**, 상태별 기계 수 |
+| **Event Log** | `[Tick N] Machine 3 WORKING` 형식의 이력 (최근 100건) + **Clear** 버튼 |
 
 ### Factory Floor 상세
 
@@ -234,6 +252,8 @@ SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTermi
 | 다형성 (서브타입) | `Factory::tick()`·main 루프의 분기 없는 단일 for문 | 새 타입 추가 시 루프 무수정 |
 | **Template Method** | `Machine::advanceProgress()`, `Connector::snapshot()` | 공통 알고리즘 1회 작성, 하위는 훅만 구현 |
 | **Factory Method** | `Machine::createOutput()` | 생산물 결정을 하위 클래스에 위임 |
+| **Observer** | `IEventObserver` ← `Factory`(Subject) / `EventLogUI`(Observer) | core가 UI를 모른 채 이벤트 통지 |
+| **다형 시나리오 (OCP)** | `Scenario` 추상 + 구체 4종 + `allScenarios()` 레지스트리 | 시나리오 추가 시 루프·UI·switch 무수정 |
 | **Bridge (Cmd/Snapshot)** | `src/bridge/`의 POD struct들 | UI↔백엔드 컴파일 의존성 절단 |
 | 캡슐화 | 전 클래스 데이터 멤버 private (+protected 세터) | 상태 전이 경로를 메서드로 한정 |
 | RAII / 소유권 이동 | `unique_ptr<Product>`의 push/pop 체인 | 누수 불가능, 소유권이 시그니처에 명시 |
@@ -258,14 +278,14 @@ SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTermi
 3. **하위 클래스가 얇다** — 구체 기계가 각각 ~30줄. 공통 로직이 잘 끌어올려졌다는 증거.
 4. **Conveyor의 행동적 차별화** — 서브타입이 이름만 다른 게 아니라 운반 지연·입구
    백프레셔라는 관찰 가능한 차이를 가진다. 상속 계층의 존재 이유가 동작으로 증명된다.
+5. **core가 완전히 자립적** — Observer 도입 후 `core/`는 `ui/`를 한 줄도 include하지
+   않아, UI·ImGui 없이 코어만으로 컴파일·테스트된다(헤드리스 시나리오 테스트로 확인).
 
 ### 알려진 한계 (개선 후보)
 
-1. **core → ui 역방향 의존** — `Factory.cpp`가 이벤트 발행을 위해 `ui/EventLogUI.h`를
-   직접 include한다. 레이어 규칙("core는 ImGui/ui를 모른다")의 유일한 위반.
-   *개선안*: bridge에 `IEventSink` 인터페이스(또는 이벤트 POD 큐)를 두고 Factory는
-   그것만 알게 하기. `RunControlManager`가 ui에 있으면서 `core/Factory.h`를 직접
-   조작하는 것도 같은 맥락 — 컨트롤러로서 의도된 예외라면 문서화가 필요하다.
+1. **`RunControlManager`가 ui에 있으면서 `core/Factory.h`를 직접 조작** — 틱 드라이버
+   겸 컨트롤러로서 의도된 예외다(뷰가 아니라 컨트롤러라 `UIObject`에도 넣지 않았다).
+   더 엄격히 가려면 시간 구동을 `core`/`app` 층으로 분리할 수 있다.
 2. **Reactor/Separator/TankTerminal의 `update()`가 글자 단위로 동일** —
    "수리 틱 → BROKEN 체크 → IDLE이면 입력 pop → advanceProgress" 흐름을
    `Machine::update()` 기본 구현으로 끌어올리고 SourceTank만 오버라이드하면 중복 제거.
@@ -273,8 +293,8 @@ SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTermi
    자유로워지면 `accepts(const Product&)` 같은 타입 검증 훅이 필요하다.
 4. **매직 넘버** — 체력 감소량 0.02, 자동수리 후 체력 0.5 등이 코드에 박혀 있다.
    StateStyle/UILayout처럼 상수 헤더로 모으면 시나리오 튜닝이 쉬워진다.
-5. **시나리오 1종** — PDF의 Bottleneck/Random Breakdown 시나리오용
-   `buildScenarioXxx()` 추가가 다음 단계.
+5. **저장/복원(Memento) 미구현** — 결정론적 시뮬이라 우선순위는 낮지만, 체크포인트형
+   저장/복귀로 "개입 전후 A/B 비교"를 넣으면 Memento 시연이 된다 (DESIGN_PATTERNS §3).
 
 ---
 
@@ -297,8 +317,10 @@ my_imgui_app/
     │   ├── Pipeline.h/.cpp     # deque FIFO 버퍼
     │   ├── Conveyor.h/.cpp     # 고정 슬롯 벨트 (틱당 한 칸 전진)
     │   ├── Product.h/.cpp      # Product/RawFeed/Intermediate/FinishedProduct
-    │   └── Factory.h/.cpp      # 조립(buildScenarioNormal), tick, 이벤트 감지, 스냅샷 수집
-    ├── bridge/                 # POD만: MachineSnap, ConnectorSnap, MachineCmd, FactoryStats
+    │   ├── Scenario.h/.cpp     # 추상 Scenario + 구체 4종 + allScenarios() 레지스트리
+    │   └── Factory.h/.cpp      # build(params)/loadScenario, tick, 이벤트 통지, 스냅샷·통계
+    ├── bridge/                 # POD/인터페이스: MachineSnap, ConnectorSnap, MachineCmd,
+    │                           #   FactoryStats, IEventObserver(Observer 계약)
     └── ui/
         ├── UIObject.h          # 추상 뷰 (render()=0)
         ├── FactoryFloorUI.*    # ImDrawList 공정 다이어그램 (시각화 핵심)

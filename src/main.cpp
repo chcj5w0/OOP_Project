@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "core/Factory.h"
+#include "core/Scenario.h"
 #include "bridge/ConnectorSnap.h"
 #include "bridge/MachineCmd.h"
 #include "bridge/MachineSnap.h"
@@ -34,7 +35,7 @@ int main(int argc, char* argv[]) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
     SDL_WindowFlags window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    SDL_Window* window = SDL_CreateWindow("Petrochemical Factory Sim - Phase 1",
+    SDL_Window* window = SDL_CreateWindow("Petrochemical Factory Simulation",
                                           SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                           1280, 720, window_flags);
 
@@ -52,7 +53,7 @@ int main(int argc, char* argv[]) {
 
     // ── Backend ───────────────────────────────────────────────────────────────
     Factory factory;
-    factory.buildScenarioNormal();
+    factory.loadScenario(*allScenarios().front());   // start on "Normal flow"
 
     // ── UI layer ──────────────────────────────────────────────────────────────
     // Shared frame data: views hold references to these and read them in render().
@@ -74,8 +75,8 @@ int main(int argc, char* argv[]) {
         &simControl, &floorUI, &inspectorUI, &statisticsUI, &eventLogUI,
     };
 
-    // Connect event logging
-    factory.setEventLogUI(&eventLogUI);
+    // Connect event logging via the Observer interface (no core→ui coupling).
+    factory.addObserver(&eventLogUI);
     eventLogUI.addEvent(0, "Simulation started");
 
     bool running = true;

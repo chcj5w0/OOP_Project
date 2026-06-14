@@ -1,4 +1,5 @@
 #include "Factory.h"
+#include "Scenario.h"
 #include "Connector.h"
 #include "Machine.h"
 #include "Pipeline.h"
@@ -7,7 +8,20 @@
 #include "machines/SourceTank.h"
 #include "machines/Reactor.h"
 #include "machines/Separator.h"
-#include "ui/EventLogUI.h"
+#include <cstdarg>
+#include <cstdio>
+
+void Factory::emitEvent(const char* fmt, ...) {
+    if (m_observers.empty()) return;
+    char msg[256];
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(msg, sizeof(msg), fmt, args);
+    va_end(args);
+    for (IEventObserver* obs : m_observers) {
+        obs->onEvent(m_tick, msg);
+    }
+}
 
 void Factory::tick() {
     // Save machine states and health before update
@@ -20,11 +34,12 @@ void Factory::tick() {
         }
     }
     
-    // Save TankTerminal's finished products
+    // Save counters that we diff after the update to emit "delta" events.
     if (m_terminal) {
         m_prevTankTerminalFinished = m_terminal->finishedProducts();
     }
-    
+    m_prevLostProducts = totalLostProducts();
+
     // Update all objects
     for (auto& o : m_objects) {
         o->update(m_tick);
@@ -39,64 +54,38 @@ void Factory::tick() {
             float oldHealth = m_machineHealthBefore[machineIdx];
             float newHealth = m->health();
             
-            // Event: Machine became BROKEN
             if (oldState != MachineState::BROKEN && newState == MachineState::BROKEN) {
-                if (m_eventLogUI) {
-                    char msg[256];
-                    snprintf(msg, sizeof(msg), "Machine %d BROKEN", m->id());
-                    m_eventLogUI->addEvent(m_tick, msg);
-                }
+                ++m_totalBreakdowns;
+                emitEvent("Machine %d BROKEN", m->id());
             }
-            
-            // Event: Machine was REPAIRED (BROKEN -> IDLE)
             if (oldState == MachineState::BROKEN && newState == MachineState::IDLE) {
-                if (m_eventLogUI) {
-                    char msg[256];
-                    snprintf(msg, sizeof(msg), "Machine %d REPAIRED", m->id());
-                    m_eventLogUI->addEvent(m_tick, msg);
-                }
+                emitEvent("Machine %d REPAIRED", m->id());
             }
-            
-            // Event: Machine became BLOCKED
             if (oldState != MachineState::BLOCKED && newState == MachineState::BLOCKED) {
-                if (m_eventLogUI) {
-                    char msg[256];
-                    snprintf(msg, sizeof(msg), "Machine %d BLOCKED", m->id());
-                    m_eventLogUI->addEvent(m_tick, msg);
-                }
+                emitEvent("Machine %d BLOCKED", m->id());
             }
-            
-            // Event: Machine started WORKING
             if (oldState != MachineState::WORKING && newState == MachineState::WORKING) {
-                if (m_eventLogUI) {
-                    char msg[256];
-                    snprintf(msg, sizeof(msg), "Machine %d WORKING", m->id());
-                    m_eventLogUI->addEvent(m_tick, msg);
-                }
+                emitEvent("Machine %d WORKING", m->id());
             }
-            
-            // Event: Machine health critical (0.3 threshold)
             if (oldHealth > 0.3f && newHealth <= 0.3f && newHealth > 0.0f) {
-                if (m_eventLogUI) {
-                    char msg[256];
-                    snprintf(msg, sizeof(msg), "Machine %d HEALTH CRITICAL (%.2f)", m->id(), newHealth);
-                    m_eventLogUI->addEvent(m_tick, msg);
-                }
+                emitEvent("Machine %d HEALTH CRITICAL (%.2f)", m->id(), newHealth);
             }
-            
+
             ++machineIdx;
         }
     }
     
     // Check TankTerminal finished products
     if (m_terminal && m_terminal->finishedProducts() > m_prevTankTerminalFinished) {
-        if (m_eventLogUI) {
-            char msg[256];
-            snprintf(msg, sizeof(msg), "Product finished! Total: %d", m_terminal->finishedProducts());
-            m_eventLogUI->addEvent(m_tick, msg);
-        }
+        emitEvent("Product finished! Total: %d", m_terminal->finishedProducts());
     }
-    
+
+    // Overflow: products dropped because a buffer was full (§2.1 Overflow).
+    int lostNow = totalLostProducts();
+    if (lostNow > m_prevLostProducts) {
+        emitEvent("Product LOST to overflow! Total lost: %d", lostNow);
+    }
+
     ++m_tick;
 }
 
@@ -149,28 +138,58 @@ FactoryStats Factory::stats() const {
                     break;
             }
         } else if (auto* c = dynamic_cast<const Connector*>(o.get())) {
-            s.totalPipelineLoad += c->size();
+            s.totalPipelineLoad += c->size();   // products in transit = WIP
         }
     }
 
+    s.totalBreakdowns = m_totalBreakdowns;
+    s.lostProducts    = totalLostProducts();
     return s;
 }
 
-void Factory::buildScenarioNormal() {
+int Factory::totalLostProducts() const {
+    int lost = 0;
+    for (const auto& o : m_objects) {
+        if (auto* m = dynamic_cast<const Machine*>(o.get())) {
+            lost += m->lostProducts();
+        }
+    }
+    return lost;
+}
+
+void Factory::loadScenario(const Scenario& scenario) {
+    m_currentScenario = &scenario;
+    scenario.configure(*this);   // the scenario decides how to build us
+}
+
+void Factory::reset() {
+    if (m_currentScenario) loadScenario(*m_currentScenario);
+}
+
+void Factory::build(const ScenarioParams& p) {
     m_objects.clear();
     m_tick = 0;
     m_terminal = nullptr;
     m_prevTankTerminalFinished = 0;
+    m_prevLostProducts = 0;
+    m_totalBreakdowns = 0;
     m_machineStatesBefore.clear();
     m_machineHealthBefore.clear();
 
-    auto src   = std::make_unique<SourceTank>(/*id*/1, /*emitEvery*/3);
-    auto pipe1 = std::make_unique<Pipeline>  (/*id*/2, /*capacity*/8);
-    auto rx    = std::make_unique<Reactor>   (/*id*/3, /*processTicks*/4);
-    auto pipe2 = std::make_unique<Pipeline>  (/*id*/4, /*capacity*/8);
-    auto sep   = std::make_unique<Separator> (/*id*/5, /*processTicks*/3);
-    auto pipe3 = std::make_unique<Conveyor>  (/*id*/6, /*capacity*/8);
-    auto tank = std::make_unique<TankTerminal>(/*id*/7, /*processTicks*/1);
+    auto src   = std::make_unique<SourceTank>(/*id*/1, p.emitInterval);
+    auto pipe1 = std::make_unique<Pipeline>  (/*id*/2, p.pipeCapacity);
+    auto rx    = std::make_unique<Reactor>   (/*id*/3, p.reactorTicks);
+    auto pipe2 = std::make_unique<Pipeline>  (/*id*/4, p.pipeCapacity);
+    auto sep   = std::make_unique<Separator> (/*id*/5, p.separatorTicks);
+    auto pipe3 = std::make_unique<Conveyor>  (/*id*/6, p.convCapacity);
+    auto tank  = std::make_unique<TankTerminal>(/*id*/7, p.terminalTicks);
+
+    // Apply per-scenario tuning uniformly to every machine.
+    for (Machine* m : { static_cast<Machine*>(src.get()), static_cast<Machine*>(rx.get()),
+                        static_cast<Machine*>(sep.get()), static_cast<Machine*>(tank.get()) }) {
+        m->setBreakdownProb(p.breakdownProb);
+        m->setDropOnOverflow(p.dropOnOverflow);
+    }
 
     src->attachOutput(pipe1.get());
     rx ->attachInput (pipe1.get());
