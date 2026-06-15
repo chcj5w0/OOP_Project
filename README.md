@@ -304,7 +304,7 @@ SourceTank[1] →P[2]→ Reactor[3] →P[4]→ Separator[5] →C[6]→ TankTermi
 my_imgui_app/
 ├── CMakeLists.txt              # SDL2+OpenGL, src/**.cpp 자동 수집
 ├── README.md                   # (이 문서) 프로젝트 전체 설명
-├── docs/                       # StarUML 다이어그램 (.mdj/.png) + DESIGN_PATTERNS.md (수업 내용 매핑)
+├── docs/                       # Integrated.mdj (StarUML 단일 원본) + UML_ClassDiagram.pdf (제출용) + DESIGN_PATTERNS.md
 ├── captures/                   # 실행 스크린샷
 ├── libs/imgui/                 # Dear ImGui 소스 (동봉)
 └── src/
