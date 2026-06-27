@@ -15,6 +15,9 @@ compile_commands.json
 # Third-party libraries (fetched separately)
 libs/
 
+# Documentation
+PRESENTATION.md
+
 # ImGui runtime state
 imgui.ini
 
